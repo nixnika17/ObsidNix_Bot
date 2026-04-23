@@ -40,7 +40,7 @@ class ObsidianManager:
 
 
 # Заміни цей шлях на свій справжній шлях до Obsidian
-my_vault = r"C:\Users\vasil\OneDrive\MYWORLD"
+my_vault = r"C:\Users\vasil\OneDrive\MYWORLD\! PROJECTS\obsidNix_Bot\TEST(DELETE.LATER)"
 
 manager = ObsidianManager(my_vault)
 
