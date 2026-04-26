@@ -1,8 +1,9 @@
 # this is a test for ObsidianNix Bot.I'm testing to open and write in local vaules.
 # PROTOTYPE №1
 
-
+from datetime import datetime #time
 import os  #operation system
+
 
 # for program can open files alone i need to show where and how she can do it?but how?
 
@@ -18,55 +19,41 @@ class ObsidianManager:
             os.makedirs(path, exist_ok=True)
             return path
 
-    def list_folders(self):
-        # Цей метод покаже всі папки всередині твого Обсідіана
-        try:
-            items = os.listdir(self.parent_path)
-            # Фільтруємо тільки папки, ігноруємо системні файли
-            folders = [f for f in items if os.path.isdir(os.path.join(self.parent_path, f))]
-            return folders
-        except FileNotFoundError:
-            return "Помилка: Шлях не знайдено. Перевір адресу папки!"
 #  ----------Make file
-    def make_note(self,file_name,content):
-         full_patch = os.path.join(self._parent_path, f"{file_name}.md") 
-         with open(full_patch, mode = 'a',encoding='utf-8') as file:
-              file.write(f"{content}/n")
+    def make_note(self, folder_name, file_name, content):
+         folder_path = self.create_folder(folder_name) #створення теки
 
-         return full_patch
-         
-        
+         full_path = os.path.join(folder_path, f"{file_name}.md") #make them together
+
+         now = datetime.now().strftime("%Y-%m-%d %H:%M")
+         with open(full_path, mode = 'a',encoding='utf-8') as file:
+              file.write(f"## {now}\n{content}\n\n---\n")
+              print(f"Нотатку збережено у: {full_path}")
+
+         return full_path
     
-         
 
-    
-    # def write_note(self, folder_name, file_name, content):
-    #     # Створюємо повний шлях до файлу
-    #     folder_path = os.path.join(self.vault_path, folder_name)
-    #     full_path = os.path.join(folder_path, f"{file_name}.md")
-
-        # # Відкриваємо файл для допису (режим 'a' - append)
-        # with open(full_path, 'a', encoding='utf-8') as file:
-        #     file.write(f"\n{content}")
-        # print(f"Нотатку збережено у: {full_path}")
-
+#     def list_folders(self):
+#         # Цей метод покаже всі папки всередині Обсідіана
+#         try:
+#             items = os.listdir(self.parent_path)
+#             # Фільтруємо тільки папки, ігноруємо системні файли
+#             folders = [f for f in items if os.path.isdir(os.path.join(self.parent_path, f))]
+#             return folders
+#         except FileNotFoundError:
+#             return "Помилка: Шлях не знайдено. Перевір адресу папки!"
 
 # Заміни цей шлях на свій справжній шлях до Obsidian
-parent_path = r"C:\Users\vasil\OneDrive\MYWORLD\! PROJECTS\obsidNix_Bot\TEST(DELETE.LATER)"
+parent_path = r"G:\My Drive\NIX WORKSHOπ"
 
 manager = ObsidianManager(parent_path)
 
 # Отримуємо назву від користувача
-user_choice = input("Яку папку створити в Obsidian? ")
+folder  = input("Яку папку створити в Obsidian? ")
+file_title = input("Назва файлу: ")
+user_text = input("Текст нотатки: ")
 
-# Передаємо цей вибір у метод класу
-final_path = manager.create_folder(user_choice)
+# Тепер передаємо ВСІ ТРИ
+manager.make_note(folder, file_title, user_text)
 
-print(f"Готово! Папка лежить тут: {final_path}")
 
-# manager = ObsidianManager(my_vault)
-# folders = manager.list_folders()
-
-# print("Твої папки в Obsidian:")
-# for i, name in enumerate(folders):
-#     print(f"{i+1}. {name}")
