@@ -20,10 +20,17 @@ class ObsidianManager:
             return path
 
 #  ----------Make file
-    def make_note(self, folder_name, file_name, content):
+    def make_note(self, content, folder_name = "! ПЕРЕНАПРАВЛЕННЯ", file_name = "newnote"):
+         if not folder_name or folder_name.strip() == "":
+            folder_name = "! ПЕРЕНАПРАВЛЕННЯ"
+    
+    # Те саме можна зробити для назви файлу
+         if not file_name or file_name.strip() == "":
+           file_name = "newnote"
          folder_path = self.create_folder(folder_name) #створення теки
 
          full_path = os.path.join(folder_path, f"{file_name}.md") #make them together
+
 
          now = datetime.now().strftime("%Y-%m-%d %H:%M")
          with open(full_path, mode = 'a',encoding='utf-8') as file:
@@ -36,15 +43,15 @@ class ObsidianManager:
 #     def list_folders(self):
 #         # Цей метод покаже всі папки всередині Обсідіана
 #         try:
-#             items = os.listdir(self.parent_path)
+#             items = os.listdir(self._parent_path)
 #             # Фільтруємо тільки папки, ігноруємо системні файли
-#             folders = [f for f in items if os.path.isdir(os.path.join(self.parent_path, f))]
+#             folders = [f for f in items if os.path.isdir(os.path.join(self._parent_path, f))]
 #             return folders
 #         except FileNotFoundError:
 #             return "Помилка: Шлях не знайдено. Перевір адресу папки!"
 
 # Заміни цей шлях на свій справжній шлях до Obsidian
-parent_path = r"G:\My Drive\NIX WORKSHOπ"
+parent_path = r"G:\My Drive\NIX WORKSHOπ" #! ПЕРЕНАПРАВЛЕННЯ
 
 manager = ObsidianManager(parent_path)
 
@@ -53,7 +60,4 @@ folder  = input("Яку папку створити в Obsidian? ")
 file_title = input("Назва файлу: ")
 user_text = input("Текст нотатки: ")
 
-# Тепер передаємо ВСІ ТРИ
-manager.make_note(folder, file_title, user_text)
-
-
+manager.make_note(user_text, folder, file_title)
