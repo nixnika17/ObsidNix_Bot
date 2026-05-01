@@ -7,7 +7,7 @@ from obsidian_backend import ObsidianManager
 
 print("Success")
 
-TOKEN = "8013227418:AAG1Zsx8ydA1Zavkjw-pw3TJyunJbWvIRMM"
+TOKEN = "don't tell"
 PATH = "/mnt/g/My Drive/NIX WORKSHOπ"
 
 manager = ObsidianManager(PATH)
