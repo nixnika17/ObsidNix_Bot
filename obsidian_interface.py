@@ -3,10 +3,9 @@ import os
 
 from obsidian_backend import ObsidianManager
 
-
 print("Success")
 
-TOKEN = "8013227418:AAG1Zsx8ydA1Zavkjw-pw3TJyunJbWvIRMM"
+TOKEN = "88013227418:AAG1Zsx8ydA1Zavkjw-pw3TJyunJbWvIRMM"
 PATH = "/mnt/g/My Drive/NIX WORKSHOπ"
 
 manager = ObsidianManager(PATH)
@@ -34,7 +33,6 @@ def cancel_process(message):
     if chat_id in user_data:
         del user_data[chat_id] # delete data
     
-    # чистка для наступних кроків
     bot.clear_step_handler_by_chat_id(chat_id=chat_id)
     bot.reply_to(message, "process is cancel")
 
@@ -83,7 +81,7 @@ def process_content_step(message):
         # Очищуємо пам'ять
         del user_data[chat_id]
     except Exception as e:
-        bot.send_message(message.chat.id, f"🟥 Eroor: {e}")
+        bot.send_message(message.chat.id, f"🟥 Error: {e}")
 
 
 print("Bot work...")
