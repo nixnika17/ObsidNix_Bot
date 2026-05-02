@@ -1,4 +1,5 @@
 import telebot
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 import os
 
 from obsidian_backend import ObsidianManager
@@ -37,6 +38,9 @@ def cancel_process(message):
     bot.reply_to(message, "process is cancel")
 
 @bot.message_handler(commands=['new'])
+def choose_folder(message):
+    # Отримуємо список тек через твій менеджер
+    folders = manager.get_folders()
 def folder(message):
     msg = bot.reply_to(message, "📂 name of folder | . for root")
     bot.register_next_step_handler(msg, process_folder_step)
