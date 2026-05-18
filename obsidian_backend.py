@@ -40,7 +40,7 @@ class ObsidianManager:
             folder_name = folder_name.strip(".,?:;()[]{}-")
 
          if not file_name or file_name.strip() == "" or file_name.strip() == ".":
-                if not content or content.strip() == "":
+                if not content or content.strip() == ".":
                   file_name = f"zeroNote_{date}_{time_now}"
                 else:
                   first_word = content.split()[0]
@@ -53,7 +53,7 @@ class ObsidianManager:
               file_name = self._clean_string(file_name)
               
 
-         folder_path = self.create_folder(folder_name) #створення теки
+         folder_path = self.create_folder(folder_name) 
          full_path = os.path.join(folder_path, f"{file_name}.md") #make them together
 
 
@@ -92,40 +92,37 @@ class ObsidianManager:
 
 
     # photo
-def append_image_to_note(self, photo_path, file_name, folder_name="DUST", caption=""):
+    def append_image_to_note(self, photo_path, file_name, folder_name="DUST", caption=""):
+        try:
+            # 1. Шлях до папки з ресурсами (завжди DUST)
+            dust_path = os.path.join(self._parent_path, "DUST")
+            os.makedirs(dust_path, exist_ok=True)
 
-        folder_path = os.path.join(self._parent_path, folder_name)
-        if not os.path.exists(folder_path):
-            os.makedirs(folder_path)
+            # 2. Формуємо нове ім'я для фото (додаємо час, щоб імена не дублювалися)
+            timestamp = datetime.now().strftime("%H%M%S")
+            original_ext = os.path.splitext(photo_path)[1]
+            photo_file_name = f"img_{timestamp}{original_ext}"
+            final_photo_path = os.path.join(dust_path, photo_file_name)
 
+            # 3. Переносимо фізичний файл у DUST
+            shutil.move(photo_path, final_photo_path)
 
-        images_folder = os.path.join(folder_path, "attachments")
-        if not os.path.exists(images_folder):
-            os.makedirs(images_folder)
+            # 4. Формуємо посилання для Obsidian
+            image_link = f"\n![[{photo_file_name}]]\n{caption}\n"
 
-        image_name = os.path.basename(photo_path)
-        dest_image_path = os.path.join(images_folder, image_name)
-        
-
-        if not os.path.exists(dest_image_path):
-            shutil.copy(photo_path, dest_image_path)
-
-        if not file_name.endswith('.md'):
-            file_name += '.md'
-
-        file_path = os.path.join(folder_path, file_name)
-
-
-        with open(file_path, 'a', encoding='utf-8') as f:
-
-            if caption:
-                f.write(f"\n\n{caption}\n")
+            # 5. Дописуємо посилання у твій обраний файл
+            if not file_name.endswith('.md'):
+                file_name += '.md'
             
-
-            rel_image_path = f"attachments/{image_name}"
-            f.write(f"\n![[{rel_image_path}]]\n")
-
-        return file_path
+            target_path = os.path.join(self._parent_path, folder_name, file_name)
+            
+            with open(target_path, 'a', encoding='utf-8') as f:
+                f.write(image_link)
+            
+            return True
+        except Exception as e:
+            print(f"Error in backend image append: {e}")
+            raise e
  
 parent_path = r"/mnt/g/My Drive/NIX WORKSHOP" #! ПЕРЕНАПРАВЛЕННЯ
 

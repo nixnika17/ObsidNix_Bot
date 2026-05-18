@@ -3,7 +3,9 @@ import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from obsidian_backend import ObsidianManager
 
-print("Success")
+
+# АНАЛІЗ КОДУ ТА ПРОЦЮВАТИ НАД ФУНКЦІЯМИ ФОТО
+
 
 TOKEN = "8013227418:AAG1Zsx8ydA1Zavkjw-pw3TJyunJbWvIRMM"
 PATH =  "/mnt/g/My Drive/NIX WORKSHOP"
@@ -25,14 +27,16 @@ def send_info(message):
 def send_author(message):
     bot.reply_to(message, "created by Nix Vail.\n\nContact: vasilishenanika@gmail.com\ntg: @nikavaslnix\nsocial media:\ngithub: https://github.com/nixnika17\n\ntgk: https://t.me/nixinworld")
 
-@bot.message_handler(commands=['stop', 'cancel', 'disactive'])
+@bot.message_handler(commands=['stop', 'cancel'])
 def cancel_process(message):
     chat_id = message.chat.id
     if chat_id in user_data:
         del user_data[chat_id]
-    
     bot.clear_step_handler_by_chat_id(chat_id=chat_id)
-    bot.reply_to(message, "✅ Process is canceled.")
+    bot.reply_to(message, "Контекст скинуто. Напиши назву нової теки або обери зі списку.")
+    
+    # bot.clear_step_handler_by_chat_id(chat_id=chat_id)
+    # bot.reply_to(message, "✅ Process is canceled.")
 
 @bot.message_handler(commands=['new'])
 def choose_folder(message):
@@ -40,7 +44,7 @@ def choose_folder(message):
     print(f"Чи існує папка? {os.path.exists(PATH)}")
     status = os.path.exists(PATH)
 
-    bot.reply_to(message, f"check.. \nШлях: {PATH}\naviable: {'✅ yes' if status else '❌ no'}")
+    bot.reply_to(message, f"check.. \npath: {PATH}\naviable: {'✅ yes' if status else '❌ no'}")
     
     folders = manager.get_folders()
     print(f"Знайдені папки: {folders}")
@@ -50,8 +54,9 @@ def choose_folder(message):
     
     for folder in folders:
         markup.row(InlineKeyboardButton(f"📁 {folder}", callback_data=f"folder_{folder}"))
+
         
-    bot.reply_to(message, "Обери теку, в якій хочеш зберегти нотатку:", reply_markup=markup)
+    bot.reply_to(message, "choose exist or make new folder:", reply_markup=markup)
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('folder_'))
@@ -59,11 +64,10 @@ def handle_folder_selection(call):
     chat_id = call.message.chat.id
     selected_folder = call.data.replace('folder_', '')
     
-    # Визначаємо шлях/назву теки
+
     folder_name = selected_folder if selected_folder != 'root' else '.'
     user_data[chat_id] = {'folder': folder_name}
     
-    # Отримуємо список файлів у вибраній теці
     files = manager.get_files(folder_name if folder_name != "." else "")
     
     markup = InlineKeyboardMarkup()
@@ -105,108 +109,96 @@ def handle_file_selection(call):
 
 
 def process_name_step(message):
-    try:
-        # Отримуємо ім'я файлу, яке ввів користувач
-        file_name = message.text.strip()
-        
-        # Переконуємось, що це не порожній рядок
-        if not file_name:
-            bot.reply_to(message, "Назва файлу не може бути порожньою. Спробуй ще раз.")
-            return
-
-        # Додаємо розширення .md
-        if not file_name.endswith('.md'):
-            file_name += '.md'
-
-        # Оскільки ми працюємо з текою DUST, використовуємо її
-        folder_name = "DUST"
-
-        # Запитуємо у користувача вміст для нотатки, наприклад, просто текст повідомлення (або створюємо порожню нотатку)
-        content = "Нотатка створена через інтерфейс бота."
-        manager.make_note(content, file_name, folder_name)
-        
-        bot.reply_to(message, f"Файл {file_name} успішно створено в теці DUST!")
-        
-    except Exception as e:
-        bot.reply_to(message, f"Помилка: {e}")
-
-
-bot.message_handler(content_types=['photo'])
-def handle_photo(message):
-    try:
-        # 1. Отримуємо фото з Telegram
-        file_info = bot.get_file(message.photo[-1].file_id)
-        downloaded_file = bot.download_file(file_info.file_path)
-
-        temp_dir = "/tmp"
-        os.makedirs(temp_dir, exist_ok=True)
-        temp_photo_path = os.path.join(temp_dir, os.path.basename(file_info.file_path))
-
-        with open(temp_photo_path, 'wb') as new_file:
-            new_file.write(downloaded_file)
-
-        # 2. Отримуємо підпис (caption), якщо він є
-        caption = message.caption if message.caption else ""
-        
-        # 3. Визначаємо теку, куди все йде
-        file_name = "photo_dust.md"
-        folder_name = "DUST"
-
-        # 4. Викликаємо наш надійний метод
-        manager.append_image_to_note(temp_photo_path, file_name, folder_name, caption=caption)
-        
-        bot.reply_to(message, "Фото та підпис успішно збережено в теці DUST!")
-        
-        # 5. Очищаємо тимчасовий файл
-        os.remove(temp_photo_path)
-        
-    except Exception as e:
-        bot.reply_to(message, f"Сталася помилка при завантаженні фото: {e}")
-
-# Окремий обробник для звичайного тексту
-@bot.message_handler(content_types=['text'])
-def handle_text(message):
-    try:
-        # Якщо ти просто пишеш текст у бот, ми створюємо текстову нотатку
-        text_content = message.text
-        file_name = "notes_dust.md"
-        folder_name = "DUST"
-        
-        manager.make_note(text_content, file_name, folder_name)
-        bot.reply_to(message, "Текстову нотатку успішно додано до теки DUST!")
-    except Exception as e:
-        bot.reply_to(message, f"Помилка при збереженні тексту: {e}")
-
-
-@bot.message_handler(content_types=['text'])
-def handle_text(message):
-    try:
-        # Якщо ти просто пишеш текст у бот, ми створюємо текстову нотатку
-        text_content = message.text
-        file_name = "notes_dust.md"
-        folder_name = "DUST"
-        
-        manager.make_note(text_content, file_name, folder_name)
-        bot.reply_to(message, "Текстову нотатку успішно додано до теки DUST!")
-    except Exception as e:
-        bot.reply_to(message, f"Помилка при збереженні тексту: {e}")
-
-
-
-def process_name_step(message):
     if message.text in ['/stop', '/cancel', '/disactive']:
         cancel_process(message)
         return
         
     chat_id = message.chat.id
     if chat_id not in user_data:
-        bot.reply_to(message, "❌ Помилка: процес було скинуто. Почни знову командою /new.")
+        bot.reply_to(message, "❌ Помилка: процес було скинуто. Почни знову /new.")
         return
         
+
     user_data[chat_id]['name'] = message.text
     
-    msg = bot.reply_to(message, "📄 Текст твоєї нотатки: ")
+
+    msg = bot.reply_to(message, "📄 Тепер напиши текст твоєї нотатки:")
     bot.register_next_step_handler(msg, process_content_step)
+
+
+@bot.message_handler(content_types=['photo'])
+@bot.message_handler(content_types=['photo'])
+def handle_photo(message):
+    try:
+        chat_id = message.chat.id
+        
+        # Перевіряємо, чи є дані в пам'яті, і чи вони не None
+        current_data = user_data.get(chat_id, {})
+        
+        # Використовуємо .get() з дефолтними значеннями, щоб уникнути None
+        target_file = current_data.get('name') 
+        if target_file is None:
+            target_file = "Unsorted_Photos" # Назва за замовчуванням
+            
+        target_folder = current_data.get('folder')
+        if target_folder is None:
+            target_folder = "DUST" # Папка за замовчуванням
+
+        # ... (тут твій код завантаження фото) ...
+
+        # Виклик бекенду (тепер ми впевнені, що тут рядки, а не None)
+        manager.append_image_to_note(
+            photo_path=temp_photo_path, 
+            file_name=str(target_file), # Примусово перетворюємо на рядок
+            folder_name=str(target_folder), 
+            caption=caption if caption else ""
+        )
+        
+        bot.reply_to(message, f"✅ Збережено у файл: {target_file}")
+        
+    except Exception as e:
+        print(f"Full error: {e}") # Це допоможе тобі побачити деталі в консолі
+        bot.reply_to(message, f"🟥 Error: {e}")
+
+
+@bot.message_handler(content_types=['text'])
+def handle_text(message):
+    chat_id = message.chat.id
+    text = message.text.strip()
+
+    if chat_id not in user_data or 'folder' not in user_data[chat_id]:
+        
+        existing_folders = manager.get_folders()
+        
+        if text in existing_folders:
+            user_data[chat_id] = {'folder': text}
+            bot.reply_to(message, f"✅ Folder '{text}' chosen. now send text or photo for notes.")
+        else:
+            try:
+                full_path = os.path.join(PATH, text)
+                os.makedirs(full_path, exist_ok=True)
+                
+                user_data[chat_id] = {'folder': text}
+                bot.reply_to(message, f"📂 Створено нову теку '{text}' та обрано її. Тепер можеш писати нотатки сюди!")
+            except Exception as e:
+                bot.reply_to(message, f"❌ Помилка при створенні теки: {e}")
+        
+        return 
+
+    try:
+        folder_name = user_data[chat_id]['folder']
+        
+        # Передаємо: 
+        # 1. Текст (content)
+        # 2. "." (file_name) -> це змусить бекенд спрацювати за логікою if not file_name...
+        # 3. Назву папки (folder_name)
+        manager.make_note(text, ".", folder_name)
+        
+        bot.reply_to(message, f"📝 Нотатку збережено в '{folder_name}'!")
+        
+    except Exception as e:
+        bot.reply_to(message, f"❌ Помилка: {e}")
+ 
 
 
 def process_content_step(message):
@@ -259,5 +251,5 @@ def process_append_content_step(message):
         bot.send_message(message.chat.id, f"🟥 Error: {e}")
 
 if __name__ == '__main__':
-    print("this is main file.bot work.")
+    print("this is main file.  bot work.")
     bot.polling(none_stop=True)
