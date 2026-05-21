@@ -129,10 +129,19 @@ def process_name_step(message):
 @bot.message_handler(content_types=['photo'])
 def handle_photo(message):
     try:
-        chat_id = message.chat.id
+        # chat_id = message.chat.id
+
+        file_info = bot.get_file(message.photo[-1].file_id)
+        downloaded_file = bot.download_file(file_info.file_path)
         
-        # 1. Перевіряємо, чи ми знаємо, куди зберігати. 
-        # Якщо даних немає, використовуємо DUST за замовчуванням.
+        # Створюємо тимчасовий шлях
+        temp_path = f"temp_{message.photo[-1].file_id}.jpg"
+        
+        with open(temp_path, 'wb') as new_file:
+            new_file.write(downloaded_file)
+
+        print(f"DEBUG INTERFACE: temp_path={temp_path}") # ПРИНТ 1
+
         if chat_id in user_data and 'name' in user_data[chat_id]:
             target_file = user_data[chat_id]['name']
             target_folder = user_data[chat_id].get('folder', 'DUST')
@@ -165,6 +174,7 @@ def handle_photo(message):
         )
         
         bot.reply_to(message, f"📸 Фото в DUST, посилання додано в: {target_file}")
+        print(f"DEBUG CALL: file={target_file}, folder={target_folder}") # ПРИНТ 2
         
     except Exception as e:
         bot.reply_to(message, f"❌ Помилка в handle_photo: {e}")

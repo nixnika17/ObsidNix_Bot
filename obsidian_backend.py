@@ -58,21 +58,27 @@ class ObsidianManager:
     
 
     def get_folders(self):
-        folder_path = self.create_folder(folder_name)
-        try:
-            items = os.listdir(self._parent_path)
-            files = [f for f in items if os.path.isfile(os.path.join(folder_path, f)) and f.endswith('.md')]
-            return files
-        except FileNotFoundError:
-            return []
+       try:
+        # Ми дивимося прямо в корінь нашого Obsidian
+          items = os.listdir(self._parent_path)
+        # Вибираємо тільки папки
+          folders = [f for f in items if os.path.isdir(os.path.join(self._parent_path, f))]
+          return folders
+       except Exception as e:
+           print(f"Помилка при отриманні папок: {e}")
+           return []
 
     def get_files(self, folder_name=""):
-        folder_path = self.create_folder(folder_name)
+        folder_path = os.path.join(self._parent_path, folder_name or "")
         try:
+            if not os.path.exists(folder_path):
+                print(f"DEBUG: Папки не існує: {folder_path}")
+                return []
             items = os.listdir(folder_path)
             files = [f for f in items if os.path.isfile(os.path.join(folder_path, f)) and f.endswith('.md')]
             return files
-        except FileNotFoundError:
+        except Exception as e:
+            print(f"Error in get_files: {e}")
             return []
 
 
@@ -87,36 +93,47 @@ class ObsidianManager:
     
 
     # photo
-    def append_image_to_note(self, photo_path, file_name, folder_name="DUST", caption=""):
-        print(f"ПОМИЛКА ТУТ? parent={self._parent_path}, folder={folder_name}, file={file_name}")
+def append_image_to_note(self, photo_path, file_name, folder_name="DUST", caption=""):
+    photo_path, file_name, folder_name = map(lambda x: str(x or ""), [photo_path, file_name, folder_name])
         try:
-            # 1. Шлях до папки з ресурсами (завжди DUST)
+            # 1. Гарантуємо, що нічого не прийшло як None
+            photo_path = str(photo_path or "")
+            file_name = str(file_name or "Unsorted_Photos")
+            folder_name = str(folder_name or "DUST")
+            
+            # 2. Використовуємо твій безпечний метод для створення папки
+            folder_path = self.create_folder(folder_name)
+
+            # 3. Створюємо папку DUST для самих медіафайлів
             dust_path = os.path.join(self._parent_path, "DUST")
             os.makedirs(dust_path, exist_ok=True)
 
-            # 2. Формуємо нове ім'я для фото (додаємо час, щоб імена не дублювалися)
-            timestamp = datetime.now().strftime("%H%M%S")
-            original_ext = os.path.splitext(photo_path)[1]
+            # 4. Формуємо ім'я для фото (додаємо дату і час)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            original_ext = os.path.splitext(photo_path)[1] or ".jpg"
             photo_file_name = f"img_{timestamp}{original_ext}"
             final_photo_path = os.path.join(dust_path, photo_file_name)
 
-            # 3. Переносимо фізичний файл у DUST
+            # 5. Переносимо фізичний файл (використовуємо shutil)
+            import shutil
             shutil.move(photo_path, final_photo_path)
 
-            # 4. Формуємо посилання для Obsidian
+            # 6. Формуємо посилання для Obsidian
             image_link = f"\n![[{photo_file_name}]]\n{caption}\n"
 
-            # 5. Дописуємо посилання у твій обраний файл
+            # 7. Додаємо розширення .md, якщо його немає
             if not file_name.endswith('.md'):
                 file_name += '.md'
             
-            target_path = os.path.join(self._parent_path, folder_name, file_name)
+            # Склеюємо фінальний шлях
+            target_note_path = os.path.join(folder_path, file_name)
             
-            with open(target_path, 'a', encoding='utf-8') as f:
+            with open(target_note_path, 'a', encoding='utf-8') as f:
                 f.write(image_link)
+            
             return True
         except Exception as e:
-            print(f"Error in backend image append: {e}")
+            print(f"ПОМИЛКА В БЕКЕНДІ: {e}")
             raise e
  
 parent_path = r"/mnt/g/My Drive/NIX WORKSHOP" #! ПЕРЕНАПРАВЛЕННЯ
