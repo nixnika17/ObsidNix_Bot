@@ -125,40 +125,51 @@ def process_name_step(message):
     msg = bot.reply_to(message, "📄 Тепер напиши текст твоєї нотатки:")
     bot.register_next_step_handler(msg, process_content_step)
 
-
-@bot.message_handler(content_types=['photo'])
+# ЗАЙМИСЬ ТУТ
 @bot.message_handler(content_types=['photo'])
 def handle_photo(message):
     try:
         chat_id = message.chat.id
         
-        # Перевіряємо, чи є дані в пам'яті, і чи вони не None
-        current_data = user_data.get(chat_id, {})
-        
-        # Використовуємо .get() з дефолтними значеннями, щоб уникнути None
-        target_file = current_data.get('name') 
-        if target_file is None:
-            target_file = "Unsorted_Photos" # Назва за замовчуванням
-            
-        target_folder = current_data.get('folder')
-        if target_folder is None:
-            target_folder = "DUST" # Папка за замовчуванням
+        # 1. Перевіряємо, чи ми знаємо, куди зберігати. 
+        # Якщо даних немає, використовуємо DUST за замовчуванням.
+        if chat_id in user_data and 'name' in user_data[chat_id]:
+            target_file = user_data[chat_id]['name']
+            target_folder = user_data[chat_id].get('folder', 'DUST')
+        else:
+            # Якщо файл не обрано, можна або видати помилку, 
+            # або зберегти в якийсь стандартний файл.
+            target_file = "Unsorted_Photos.md"
+            target_folder = "DUST"
 
-        # ... (тут твій код завантаження фото) ...
+        # 2. Завантажуємо фото
+        file_info = bot.get_file(message.photo[-1].file_id)
+        downloaded_file = bot.download_file(file_info.file_path)
 
-        # Виклик бекенду (тепер ми впевнені, що тут рядки, а не None)
+        # Створюємо шлях для тимчасового збереження
+        temp_dir = "/tmp"
+        os.makedirs(temp_dir, exist_ok=True)
+        temp_photo_path = os.path.join(temp_dir, os.path.basename(file_info.file_path))
+
+        with open(temp_photo_path, 'wb') as new_file:
+            new_file.write(downloaded_file)
+
+        caption = message.caption if message.caption else ""
+
+        # 3. ВИКЛИК БЕКЕНДУ (тепер усі змінні визначені)
         manager.append_image_to_note(
             photo_path=temp_photo_path, 
-            file_name=str(target_file), # Примусово перетворюємо на рядок
-            folder_name=str(target_folder), 
-            caption=caption if caption else ""
+            file_name=target_file, 
+            folder_name=target_folder, 
+            caption=caption
         )
         
-        bot.reply_to(message, f"✅ Збережено у файл: {target_file}")
+        bot.reply_to(message, f"📸 Фото в DUST, посилання додано в: {target_file}")
         
     except Exception as e:
-        print(f"Full error: {e}") # Це допоможе тобі побачити деталі в консолі
-        bot.reply_to(message, f"🟥 Error: {e}")
+        bot.reply_to(message, f"❌ Помилка в handle_photo: {e}")
+
+# ДАЛІ ВСЕ СПРАВНО
 
 
 @bot.message_handler(content_types=['text'])
@@ -205,7 +216,6 @@ def process_content_step(message):
     if message.text in ['/stop', '/cancel', '/disactive']:
         cancel_process(message)
         return
-        
     try:
         chat_id = message.chat.id
         folder = user_data[chat_id]['folder']
