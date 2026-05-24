@@ -93,8 +93,8 @@ class ObsidianManager:
     
 
     # photo
-def append_image_to_note(self, photo_path, file_name, folder_name="DUST", caption=""):
-    photo_path, file_name, folder_name = map(lambda x: str(x or ""), [photo_path, file_name, folder_name])
+    def append_image_to_note(self, photo_path, file_name, folder_name="DUST", caption=""):
+        photo_path, file_name, folder_name = map(lambda x: str(x or ""), [photo_path, file_name, folder_name])
         try:
             # 1. Гарантуємо, що нічого не прийшло як None
             photo_path = str(photo_path or "")
