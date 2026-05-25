@@ -1,4 +1,3 @@
-# this is a test for ObsidianNix Bot.I'm testing to open and write in local vaules.
 # PROTOTYPE №1
 
 from datetime import datetime #time
@@ -18,7 +17,7 @@ class ObsidianManager:
         for char in forbidden:
             text = str(text or "")
         return text.strip()
-    def create_folder(self, folder_name): # склеювання шляху,perent vault
+    def create_folder(self, folder_name): # склеювання шляху, parent vault
         if folder_name:
             folder_name = str(folder_name).strip(".,?:;()[]{}- ")
         if not folder_name:
@@ -95,6 +94,7 @@ class ObsidianManager:
     # photo
     def append_image_to_note(self, photo_path, file_name, folder_name="DUST", caption=""):
         photo_path, file_name, folder_name = map(lambda x: str(x or ""), [photo_path, file_name, folder_name])
+        print("Я ПРАЦЮЮ!")
         try:
             # 1. Гарантуємо, що нічого не прийшло як None
             photo_path = str(photo_path or "")
@@ -128,7 +128,7 @@ class ObsidianManager:
             # Склеюємо фінальний шлях
             target_note_path = os.path.join(folder_path, file_name)
             
-            with open(target_note_path, 'a', encoding='utf-8') as f:
+            with open(target_note_path, 'a', encoding='wb') as f:
                 f.write(image_link)
             
             return True

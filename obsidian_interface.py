@@ -1,8 +1,10 @@
 import os
+import shutil
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from obsidian_backend import ObsidianManager
 
+print("--- ТЕРМІНАЛ ПЕРЕЗАВАНТАЖЕНО ---")
 
 # АНАЛІЗ КОДУ ТА ПРОЦЮВАТИ НАД ФУНКЦІЯМИ ФОТО
 
@@ -128,56 +130,47 @@ def process_name_step(message):
 # ЗАЙМИСЬ ТУТ
 @bot.message_handler(content_types=['photo'])
 def handle_photo(message):
+    print("!!! ПРИЙНЯТО ФОТО В ІНТЕРФЕЙСІ !!!")
     try:
-        # chat_id = message.chat.id
-
-        file_info = bot.get_file(message.photo[-1].file_id)
+        chat_id = message.chat.id
+        
+        # 1. Отримуємо фото від Telegram
+        file_id = message.photo[-1].file_id
+        file_info = bot.get_file(file_id)
         downloaded_file = bot.download_file(file_info.file_path)
         
-        # Створюємо тимчасовий шлях
-        temp_path = f"temp_{message.photo[-1].file_id}.jpg"
+        # 2. Зберігаємо тимчасово
+        temp_path = f"temp_{file_id}.jpg"
+        with open(temp_path, 'wb') as f:
+            f.write(downloaded_file)
         
-        with open(temp_path, 'wb') as new_file:
-            new_file.write(downloaded_file)
+        # 3. БЕЗПЕЧНО витягуємо дані (використовуємо .get, щоб не було KeyError)
+        user_info = user_data.get(chat_id, {})
+        
+        # Якщо user_info['name'] порожній або None, беремо "Unsorted"
+        target_file = user_info.get('name') or "Unsorted_Photos"
+        target_folder = user_info.get('folder') or "DUST"
+        
+        caption = message.caption or ""
 
-        print(f"DEBUG INTERFACE: temp_path={temp_path}") # ПРИНТ 1
+        print(f"DEBUG: Передаю в бекенд: {target_file} у папку {target_folder}")
 
-        if chat_id in user_data and 'name' in user_data[chat_id]:
-            target_file = user_data[chat_id]['name']
-            target_folder = user_data[chat_id].get('folder', 'DUST')
-        else:
-            # Якщо файл не обрано, можна або видати помилку, 
-            # або зберегти в якийсь стандартний файл.
-            target_file = "Unsorted_Photos.md"
-            target_folder = "DUST"
-
-        # 2. Завантажуємо фото
-        file_info = bot.get_file(message.photo[-1].file_id)
-        downloaded_file = bot.download_file(file_info.file_path)
-
-        # Створюємо шлях для тимчасового збереження
-        temp_dir = "/tmp"
-        os.makedirs(temp_dir, exist_ok=True)
-        temp_photo_path = os.path.join(temp_dir, os.path.basename(file_info.file_path))
-
-        with open(temp_photo_path, 'wb') as new_file:
-            new_file.write(downloaded_file)
-
-        caption = message.caption if message.caption else ""
-
-        # 3. ВИКЛИК БЕКЕНДУ (тепер усі змінні визначені)
+        # 4. Виклик бекенду
+        # Переконайся, що в obsidian_backend.py метод називається саме так!
         manager.append_image_to_note(
-            photo_path=temp_photo_path, 
+            photo_path=temp_path, 
             file_name=target_file, 
             folder_name=target_folder, 
             caption=caption
         )
         
-        bot.reply_to(message, f"📸 Фото в DUST, посилання додано в: {target_file}")
-        print(f"DEBUG CALL: file={target_file}, folder={target_folder}") # ПРИНТ 2
-        
+        bot.reply_to(message, f"📸 Фото додано в: {target_file}")
+
     except Exception as e:
-        bot.reply_to(message, f"❌ Помилка в handle_photo: {e}")
+        import traceback
+        print("❌ КРИТИЧНА ПОМИЛКА В ІНТЕРФЕЙСІ:")
+        traceback.print_exc() # ЦЕ НАЙВАЖЛИВІШИЙ РЯДОК ЗАРАЗ
+        bot.reply_to(message, f"❌ Помилка: {e}")
 
 # ДАЛІ ВСЕ СПРАВНО
 
