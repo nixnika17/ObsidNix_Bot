@@ -11,7 +11,8 @@ class ObsidianManager:
         if not parent_path:
          raise ValueError("❌ here should be a parent_path!")
         self._parent_path = parent_path
-        #  here incapsulation for not change 
+        
+        
     def _clean_string(self, text):   #чистка заборонених символів   # можна було використати вбудований метод еее
         forbidden = r'\/:*?"<>|'
         for char in forbidden:
@@ -93,7 +94,19 @@ class ObsidianManager:
 
     # photo
     def append_image_to_note(self, photo_path, file_name, folder_name="DUST", caption=""):
-        photo_path, file_name, folder_name = map(lambda x: str(x or ""), [photo_path, file_name, folder_name])
+        print(f"DEBUG append_image_to_note called with:")
+        print(f"  photo_path={repr(photo_path)}, type={type(photo_path)}")
+        print(f"  file_name={repr(file_name)}, type={type(file_name)}")
+        print(f"  folder_name={repr(folder_name)}, type={type(folder_name)}")
+        print(f"  caption={repr(caption)}, type={type(caption)}")
+
+        photo_path, file_name, folder_name, caption = map(lambda x: str(x or ""), [photo_path, file_name, folder_name, caption])
+
+        print(f"DEBUG after map:")
+        print(f"  photo_path={repr(photo_path)}")
+        print(f"  file_name={repr(file_name)}")
+        print(f"  folder_name={repr(folder_name)}")
+        print(f"  caption={repr(caption)}")
         print("Я ПРАЦЮЮ!")
         try:
             # 1. Гарантуємо, що нічого не прийшло як None
@@ -112,6 +125,7 @@ class ObsidianManager:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             original_ext = os.path.splitext(photo_path)[1] or ".jpg"
             photo_file_name = f"img_{timestamp}{original_ext}"
+            print(f"DEBUG: photo_file_name={repr(photo_file_name)}, type={type(photo_file_name)}")
             final_photo_path = os.path.join(dust_path, photo_file_name)
 
             # 5. Переносимо фізичний файл (використовуємо shutil)
@@ -119,7 +133,9 @@ class ObsidianManager:
             shutil.move(photo_path, final_photo_path)
 
             # 6. Формуємо посилання для Obsidian
+            print(f"DEBUG before image_link: caption={repr(caption)}, type={type(caption)}")
             image_link = f"\n![[{photo_file_name}]]\n{caption}\n"
+            print(f"DEBUG: image_link created successfully: {repr(image_link)}")
 
             # 7. Додаємо розширення .md, якщо його немає
             if not file_name.endswith('.md'):
@@ -128,7 +144,7 @@ class ObsidianManager:
             # Склеюємо фінальний шлях
             target_note_path = os.path.join(folder_path, file_name)
             
-            with open(target_note_path, 'a', encoding='wb') as f:
+            with open(target_note_path, 'a', encoding='utf-8') as f:
                 f.write(image_link)
             
             return True

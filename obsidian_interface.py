@@ -65,49 +65,65 @@ def choose_folder(message):
 def handle_folder_selection(call):
     chat_id = call.message.chat.id
     selected_folder = call.data.replace('folder_', '')
-    
+
 
     folder_name = selected_folder if selected_folder != 'root' else '.'
     user_data[chat_id] = {'folder': folder_name}
-    
+
     files = manager.get_files(folder_name if folder_name != "." else "")
-    
+
     markup = InlineKeyboardMarkup()
     markup.row(InlineKeyboardButton("➕ Створити новий файл", callback_data="create_new_file"))
-    
+
     for file in files:
         file_display = file.replace('.md', '')
         markup.row(InlineKeyboardButton(f"📄 {file_display}", callback_data=f"file_{file}"))
-        
-    bot.edit_message_text(
-        chat_id=chat_id,
-        message_id=call.message.id,
-        text=f"📂 Вибрано теку: {folder_name}.\n\n file for add or make new:",
-        reply_markup=markup
-    )
+
+    try:
+        bot.edit_message_text(
+            chat_id=chat_id,
+            message_id=call.message.id,
+            text=f"📂 Вибрано теку: {folder_name}.\n\n file for add or make new:",
+            reply_markup=markup
+        )
+    except telebot.apihelper.ApiTelegramException as e:
+        if "not modified" in str(e):
+            bot.answer_callback_query(call.id, "✅ Тека вже обрана")
+        else:
+            raise
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('file_') or call.data == 'create_new_file')
 def handle_file_selection(call):
     chat_id = call.message.chat.id
-    
-    if call.data == 'create_new_file':
-        bot.edit_message_text(
-            chat_id=chat_id,
-            message_id=call.message.id,
-            text="📝 Напиши назву нового файлу (без .md):"
-        )
-        bot.register_next_step_handler(call.message, process_name_step)
-    else:
-        selected_file = call.data.replace('file_', '')
-        user_data[chat_id]['name'] = selected_file
-        
-        bot.edit_message_text(
-            chat_id=chat_id,
-            message_id=call.message.id,
-            text=f"📄 Вибрано файл: {selected_file}.\n\nНапиши текст, який хочеш додати до файлу:"
-        )
-        bot.register_next_step_handler(call.message, process_append_content_step)
+
+    if chat_id not in user_data:
+        bot.answer_callback_query(call.id, "❌ Спочатку вибери теку")
+        return
+
+    try:
+        if call.data == 'create_new_file':
+            bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=call.message.id,
+                text="📝 Напиши назву нового файлу (без .md):"
+            )
+            bot.register_next_step_handler(call.message, process_name_step)
+        else:
+            selected_file = call.data.replace('file_', '')
+            user_data[chat_id]['name'] = selected_file
+
+            bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=call.message.id,
+                text=f"📄 Вибрано файл: {selected_file}.\n\nНапиши текст, який хочеш додати до файлу:"
+            )
+            bot.register_next_step_handler(call.message, process_append_content_step)
+    except telebot.apihelper.ApiTelegramException as e:
+        if "not modified" in str(e):
+            bot.answer_callback_query(call.id, "✅ Вже обрано")
+        else:
+            raise
 
 
 def process_name_step(message):

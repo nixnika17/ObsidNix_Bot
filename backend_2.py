@@ -12,7 +12,7 @@ class Obsidian_Note:
     
     os.makedirs("dir", exist_ok = True)
     def make_file(self, file_name): # open and edit files
-        file_name = print("file name? :    ")
+        file_name = input("file name? :    ")
         full_path = os.path.join(self._path, file_name)
 
         if not file_name:
