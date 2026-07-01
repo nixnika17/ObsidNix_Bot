@@ -13,10 +13,11 @@ class ObsidianManager:
         self._parent_path = parent_path
         
         
-    def _clean_string(self, text):   #чистка заборонених символів   # можна було використати вбудований метод еее
-        forbidden = r'\/:*?"<>|'
+    def _clean_string(self, text):   # чистка заборонених символів
+        forbidden = r'\\/:*?"<>|'
+        text = str(text or "")
         for char in forbidden:
-            text = str(text or "")
+            text = text.replace(char, "")
         return text.strip()
     def create_folder(self, folder_name): # склеювання шляху, parent vault
         if folder_name:
@@ -28,7 +29,7 @@ class ObsidianManager:
         path = os.path.join(self._parent_path or "", clean_name or "Untitled")
         os.makedirs(path, exist_ok=True)   # exist_ok=True -  не дає програмі впасти, якщо папка вже є
         return path
-         
+
             
 #  ----------Make file
     def make_note(self, content,  file_name, folder_name = "! ПЕРЕНАПРАВЛЕННЯ",): # making note, time
@@ -134,7 +135,7 @@ class ObsidianManager:
 
             # 6. Формуємо посилання для Obsidian
             print(f"DEBUG before image_link: caption={repr(caption)}, type={type(caption)}")
-            image_link = f"\n![[{photo_file_name}]]\n{caption}\n"
+            image_link = f"\n![[DUST/{photo_file_name}]]\n{caption}\n"
             print(f"DEBUG: image_link created successfully: {repr(image_link)}")
 
             # 7. Додаємо розширення .md, якщо його немає

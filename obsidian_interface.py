@@ -7,15 +7,57 @@ from obsidian_backend import ObsidianManager
 print("--- ТЕРМІНАЛ ПЕРЕЗАВАНТАЖЕНО ---")
 
 # АНАЛІЗ КОДУ ТА ПРОЦЮВАТИ НАД ФУНКЦІЯМИ ФОТО
+# КОМАНДА @photos яка приймає фото та текст до нього та вставляє в нотатку
+# спробуй кинути фото в файлі
+# навчись видобовувати посилання на фото як це робить ші він працює з назвами 
+
 
 
 TOKEN = "8013227418:AAG1Zsx8ydA1Zavkjw-pw3TJyunJbWvIRMM"
-PATH =  "/mnt/g/My Drive/NIX WORKSHOP"
 
+
+def resolve_vault_path():
+    candidates = [
+        os.getenv("OBSIDIAN_PATH"),
+        os.getenv("VAULT_PATH"),
+        r"G:\My Drive\NIX WORKSHOP",
+        r"D:\My Drive\NIX WORKSHOP",
+        "/mnt/g/My Drive/NIX WORKSHOP",
+        os.path.join(os.getcwd(), "NIX WORKSHOP"),
+        os.path.join(os.getcwd(), "ObsidianVault"),
+    ]
+
+    for candidate in candidates:
+        if candidate and os.path.exists(candidate):
+            return candidate
+
+    return candidates[0] or os.getcwd()
+
+
+PATH = resolve_vault_path()
 manager = ObsidianManager(PATH)
 bot = telebot.TeleBot(TOKEN)
 
 user_data = {}
+
+def get_note_target(chat_id):
+    user_info = user_data.get(chat_id, {})
+    target_file = user_info.get('name') or "Unsorted_Photos"
+    target_folder = user_info.get('folder') or "DUST"
+    return target_file, target_folder
+
+
+@bot.message_handler(commands=['photos', 'photo'])
+def command_photos(message):
+    chat_id = message.chat.id
+    target_file, target_folder = get_note_target(chat_id)
+    user_data[chat_id] = {**user_data.get(chat_id, {}), 'photo_mode': True}
+    bot.reply_to(
+        message,
+        f"📸 Готово до прийому фото. Надішліть фото з текстом/підписом.\n"
+        f"Збережу у файл: {target_file}\nу теку: {target_folder}"
+    )
+
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
@@ -143,49 +185,81 @@ def process_name_step(message):
     msg = bot.reply_to(message, "📄 Тепер напиши текст твоєї нотатки:")
     bot.register_next_step_handler(msg, process_content_step)
 
-# ЗАЙМИСЬ ТУТ
+def process_photo_caption_step(message, photo_path, target_file, target_folder):
+    if message.text in ['/stop', '/cancel', '/disactive']:
+        cancel_process(message)
+        return
+
+    try:
+        caption = (message.text or "").strip()
+        manager.append_image_to_note(
+            photo_path=photo_path,
+            file_name=target_file,
+            folder_name=target_folder,
+            caption=caption,
+        )
+        bot.reply_to(message, f"📸 Фото з текстом додано в: {target_file}")
+    except Exception as e:
+        import traceback
+        print("❌ ПОМИЛКА ПРИ ОБРОБЦІ ТЕКСТУ ДО ФОТО:")
+        traceback.print_exc()
+        bot.reply_to(message, f"❌ Помилка: {e}")
+
+
 @bot.message_handler(content_types=['photo'])
 def handle_photo(message):
     print("!!! ПРИЙНЯТО ФОТО В ІНТЕРФЕЙСІ !!!")
     try:
         chat_id = message.chat.id
-        
-        # 1. Отримуємо фото від Telegram
+
         file_id = message.photo[-1].file_id
         file_info = bot.get_file(file_id)
         downloaded_file = bot.download_file(file_info.file_path)
-        
-        # 2. Зберігаємо тимчасово
-        temp_path = f"temp_{file_id}.jpg"
+
+        ext = os.path.splitext(file_info.file_path)[1] or ".jpg"
+        temp_path = os.path.join(os.getcwd(), f"temp_{file_id}{ext}")
         with open(temp_path, 'wb') as f:
             f.write(downloaded_file)
-        
-        # 3. БЕЗПЕЧНО витягуємо дані (використовуємо .get, щоб не було KeyError)
-        user_info = user_data.get(chat_id, {})
-        
-        # Якщо user_info['name'] порожній або None, беремо "Unsorted"
-        target_file = user_info.get('name') or "Unsorted_Photos"
-        target_folder = user_info.get('folder') or "DUST"
-        
-        caption = message.caption or ""
+
+        target_file, target_folder = get_note_target(chat_id)
+        caption = (message.caption or "").strip()
 
         print(f"DEBUG: Передаю в бекенд: {target_file} у папку {target_folder}")
 
-        # 4. Виклик бекенду
-        # Переконайся, що в obsidian_backend.py метод називається саме так!
+        if not caption and user_data.get(chat_id, {}).get('photo_mode'):
+            user_data[chat_id]['photo_mode'] = False
+            user_data[chat_id]['pending_photo'] = {
+                'photo_path': temp_path,
+                'target_file': target_file,
+                'target_folder': target_folder,
+            }
+            msg = bot.reply_to(message, "✍️ Напиши текст для фото:")
+            bot.register_next_step_handler(
+                msg,
+                lambda next_message: process_photo_caption_step(
+                    next_message,
+                    user_data[chat_id]['pending_photo']['photo_path'],
+                    user_data[chat_id]['pending_photo']['target_file'],
+                    user_data[chat_id]['pending_photo']['target_folder'],
+                ),
+            )
+            return
+
+        user_data.setdefault(chat_id, {})
+        user_data[chat_id].pop('photo_mode', None)
         manager.append_image_to_note(
-            photo_path=temp_path, 
-            file_name=target_file, 
-            folder_name=target_folder, 
-            caption=caption
+            photo_path=temp_path,
+            file_name=target_file,
+            folder_name=target_folder,
+            caption=caption,
         )
-        
+
         bot.reply_to(message, f"📸 Фото додано в: {target_file}")
 
     except Exception as e:
         import traceback
         print("❌ КРИТИЧНА ПОМИЛКА В ІНТЕРФЕЙСІ:")
-        traceback.print_exc() # ЦЕ НАЙВАЖЛИВІШИЙ РЯДОК ЗАРАЗ
+        traceback.print_exc()
         bot.reply_to(message, f"❌ Помилка: {e}")
 
 # ДАЛІ ВСЕ СПРАВНО
