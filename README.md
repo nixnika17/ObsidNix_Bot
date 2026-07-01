@@ -1,15 +1,15 @@
-hey!
+Hey!
 
-i had a problem: i love obsidian and the system of making notes there, but i hated a long program dowloanding and scroling to find the folders and files i want to record,so i made a Obsid_Nix,which is bot on telegram what open fast and i can fast making or chouse a folder.
+I had a problem: I love Obsidian and the system of making notes there, but I hated a long program downloading and scrolling to find the folders and files I wanted to record, so I made an Obsid_Nix, which is a bot on Telegram that opens fast, and I can quickly make or choose a folder.
 
-this program writed on python and bot is in a library telebot(obsidian_interfaces file) 
+This program is written in Python, and the bot is in a library called Telebot (the Obsidian interfaces file). 
 
-like i'm new in this all i uses AI for help, but belive me, i understend everything.
+Like I'm new in this; all I use AI for is help, but believe me, I understand everything.
 
-P.S: i have a probllem with adding photos in note,program don't see a photo and i don't know why,if you lnow please write me.
+P.S: I have a problem with adding photos in notes; the program doesn't see a photo, and I don't know why. If you know, please write to me.
 
-P.S: english is my thirt language.
+P.S: English is my third language.
 
-this projects made on old hp in breaks without any bombing, finished 9th grade with him and moved to a brand new city.
+This project was made on an old HP in breaks without any bombing; I finished 9th grade with him and moved to a brand new city.
 
-made by nix with song "mad world - Gary Jules and Michael Andrews" and executor Adrianne Lenker.
+Made by Nix with the song "mad world - Gary Jules and Michael Andrews" and executor Adrianne Lenker.
