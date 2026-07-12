@@ -4,9 +4,10 @@ I had a problem: I love Obsidian and the system of making notes there, but I hat
 
 This program is written in Python, and the bot is in a library called Telebot (the Obsidian interfaces file). 
 
-Like I'm new in this; all I use AI for is help, but believe me, I understand everything.
+Like I'm new in this; all I use AI(Gemini and claude) for is help, but believe me, I understand everything. 
 
-P.S: I have a problem with adding photos in notes; the program doesn't see a photo, and I don't know why. If you know, please write to me.
+start: April 23rd 2026.
+end: 12 july 2026.
 
 P.S: English is my third language.
 
