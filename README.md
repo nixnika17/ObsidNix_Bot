@@ -1,4 +1,4 @@
-Hey!
+Hey,it's Nix!
 
 I had a problem: I love Obsidian and the system of making notes there, but I hated a long program downloading and scrolling to find the folders and files I wanted to record, so I made an Obsid_Nix, which is a bot on Telegram that opens fast, and I can quickly make or choose a folder.
 
