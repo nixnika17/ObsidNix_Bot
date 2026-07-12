@@ -3,6 +3,8 @@ import shutil
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from obsidian_backend import ObsidianManager
+from dotenv import load_dotenv
+from telebot import types
 
 print("--- ТЕРМІНАЛ ПЕРЕЗАВАНТАЖЕНО ---")
 
@@ -13,7 +15,8 @@ print("--- ТЕРМІНАЛ ПЕРЕЗАВАНТАЖЕНО ---")
 
 
 
-TOKEN = "8013227418:AAG1Zsx8ydA1Zavkjw-pw3TJyunJbWvIRMM"
+load_dotenv()
+TOKEN = os.getenv("BOT_TOKEN")
 
 
 def resolve_vault_path():
@@ -38,6 +41,7 @@ PATH = resolve_vault_path()
 manager = ObsidianManager(PATH)
 bot = telebot.TeleBot(TOKEN)
 
+
 user_data = {}
 
 def get_note_target(chat_id):
@@ -58,10 +62,25 @@ def command_photos(message):
         f"Збережу у файл: {target_file}\nу теку: {target_folder}"
     )
 
+def get_main_keyboard():
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+    
+    # Створюємо кнопки
+    btn_new = types.KeyboardButton("/new")
+    btn_stop = types.KeyboardButton("/stop")
+    
+    # Додаємо кнопки в клавіатуру
+    markup.add(btn_new, btn_stop)
+    return markup
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    bot.reply_to(message, "Hey,Nix!I'm your obsidian-manager.\n\n")
+    bot.send_message(
+        message.chat.id, 
+        "Hey,Nix!i'm your bot.", 
+        reply_markup=get_main_keyboard() # ТУТ МИ ПРИЧІПЛЯЄМО КНОПКИ
+    )
+    
 
 @bot.message_handler(commands=['info'])
 def send_info(message):
@@ -313,8 +332,31 @@ def process_content_step(message):
         chat_id = message.chat.id
         folder = user_data[chat_id]['folder']
         name = user_data[chat_id]['name']
-        content = message.text
 
+        if message.content_type == 'photo':
+            # прийшло фото замість тексту -> обробляємо як картинку
+            file_id = message.photo[-1].file_id
+            file_info = bot.get_file(file_id)
+            downloaded_file = bot.download_file(file_info.file_path)
+
+            ext = os.path.splitext(file_info.file_path)[1] or ".jpg"
+            temp_path = os.path.join(os.getcwd(), f"temp_{file_id}{ext}")
+            with open(temp_path, 'wb') as f:
+                f.write(downloaded_file)
+
+            caption = (message.caption or "").strip()
+
+            manager.append_image_to_note(
+                photo_path=temp_path,
+                file_name=name,
+                folder_name=folder if folder != "." else "",
+                caption=caption,
+            )
+            bot.send_message(chat_id, f"📸 Фото додано у файл: {name}")
+            del user_data[chat_id]
+            return
+
+        content = message.text
         full_path = manager.make_note(
             content=content, 
             file_name=name, 
@@ -328,7 +370,6 @@ def process_content_step(message):
     except Exception as e:
         bot.send_message(message.chat.id, f"🟥 Error: {e}")
 
-
 def process_append_content_step(message):
     if message.text in ['/stop', '/cancel', '/disactive']:
         cancel_process(message)
@@ -338,8 +379,31 @@ def process_append_content_step(message):
         chat_id = message.chat.id
         folder = user_data[chat_id]['folder']
         file_name = user_data[chat_id]['name']
+
+        if message.content_type == 'photo':
+            # прийшло фото замість тексту -> обробляємо як картинку
+            file_id = message.photo[-1].file_id
+            file_info = bot.get_file(file_id)
+            downloaded_file = bot.download_file(file_info.file_path)
+
+            ext = os.path.splitext(file_info.file_path)[1] or ".jpg"
+            temp_path = os.path.join(os.getcwd(), f"temp_{file_id}{ext}")
+            with open(temp_path, 'wb') as f:
+                f.write(downloaded_file)
+
+            caption = (message.caption or "").strip()
+
+            manager.append_image_to_note(
+                photo_path=temp_path,
+                file_name=file_name,
+                folder_name=folder if folder != "." else "",
+                caption=caption,
+            )
+            bot.send_message(chat_id, f"📸 Фото додано у файл: {file_name}")
+            del user_data[chat_id]
+            return
+
         new_content = message.text
-        
         full_path = manager.append_to_note(
             content=new_content,
             file_name=file_name,
@@ -352,6 +416,10 @@ def process_append_content_step(message):
         del user_data[chat_id]
     except Exception as e:
         bot.send_message(message.chat.id, f"🟥 Error: {e}")
+
+    from telebot import types
+
+
 
 if __name__ == '__main__':
     print("this is main file.  bot work.")
